@@ -116,7 +116,10 @@
 --- - In Normal mode to operate on line. Appends to `prefix` the last character.
 ---   This aligns with |operator-doubled| and established patterns for operators
 ---   with more than two characters, like |guu|, |gUU|, etc.
---- - In Visual mode to operate on visual selection. Uses `prefix` directly.
+--- - In Visual mode to operate on visual selection. Uses `prefix` directly, if
+---   `selection` is `nil` (default). Set `selection` to a string to choose a
+---   different mapping for Visual mode, or an empty string to disable Visual
+---   mode mapping.
 ---
 --- Example of default mappings for "replace":
 --- - `gr` in Normal mode for operating on textobject.
@@ -128,23 +131,26 @@
 ---
 --- There are two suggested ways to customize mappings:
 ---
---- - Change `prefix` in |MiniOperators.setup()| call. For example, doing >lua
+--- - Change `prefix` in |MiniOperators.setup()| call. Here's an example to
+---   change the "exchange" operator's mappings to 'tommcdo/vim-exchange' style: >lua
 ---
----     require('mini.operators').setup({ replace = { prefix = 'cr' } })
+---     require('mini.operators').setup(
+---       { exchange = { prefix = 'cx', selection = 'X' } }
+---     )
 --- <
----   will make mappings for `cr` / `crr` / `cr` instead of `gr` / `grr` / `gr`.
+---   This will make mappings for `cx` / `cxx` / `X` instead of `gx` / `gxx` / `gx`.
 ---
---- - Disable automated mapping creation by supplying empty string as prefix and
+--- - Or, disable automated mapping creation by supplying empty string as prefix and
 ---   use |MiniOperators.make_mappings()| directly. For example: >lua
 ---
 ---     -- Disable automated creation of "replace"
 ---     local operators = require('mini.operators')
----     operators.setup({ replace = { prefix = '' } })
+---     operators.setup({ exchange = { prefix = '' } })
 ---
 ---     -- Make custom mappings
 ---     operators.make_mappings(
----       'replace',
----       { textobject = 'cr', line = 'crr', selection = 'cr' }
+---       'exchange',
+---       { textobject = 'cx', line = 'cxx', selection = 'X' }
 ---     )
 --- <
 ---@tag MiniOperators-overview
@@ -199,6 +205,10 @@ end
 --- `evaluate.prefix` is a string used to automatically infer operator mappings keys
 --- during |MiniOperators.setup()|. See |MiniOperators-mappings|.
 ---
+--- `evaluate.selection` is a string used to choose a separate mapping for
+--- Visual mode, or to disable Visual mode mapping for operator.
+--- If `nil` (default), Visual mode mapping is set as `evaluate.prefix`.
+---
 --- `evaluate.func` is a function used to actually evaluate text region.
 --- If `nil` (default), |MiniOperators.default_evaluate_func()| is used.
 ---
@@ -215,6 +225,10 @@ end
 --- `exchange.prefix` is a string used to automatically infer operator mappings keys
 --- during |MiniOperators.setup()|. See |MiniOperators-mappings|.
 ---
+--- `exchange.selection` is a string used to choose a separate mapping for
+--- Visual mode, or to disable Visual mode mapping for operator.
+--- If `nil` (default), Visual mode mapping is set as `exchange.prefix`.
+---
 --- Note: default value "gx" overrides |netrw-gx| and |gx| / |v_gx|. If you prefer
 --- using its original functionality, choose different `config.prefix`.
 ---
@@ -227,6 +241,10 @@ end
 --- `multiply.prefix` is a string used to automatically infer operator mappings keys
 --- during |MiniOperators.setup()|. See |MiniOperators-mappings|.
 ---
+--- `multiply.selection` is a string used to choose a separate mapping for
+--- Visual mode, or to disable Visual mode mapping for operator.
+--- If `nil` (default), Visual mode mapping is set as `multiply.prefix`.
+---
 --- `multiply.func` is a function used to optionally update multiplied text.
 --- If `nil` (default), text used as is.
 ---
@@ -238,6 +256,10 @@ end
 --- `replace.prefix` is a string used to automatically infer operator mappings keys
 --- during |MiniOperators.setup()|. See |MiniOperators-mappings|.
 ---
+--- `replace.selection` is a string used to choose a separate mapping for
+--- Visual mode, or to disable Visual mode mapping for operator.
+--- If `nil` (default), Visual mode mapping is set as `replace.prefix`.
+---
 --- `replace.reindent_linewise` is a boolean indicating whether newly put linewise
 --- text should preserve indent of replaced text.
 ---
@@ -245,6 +267,10 @@ end
 ---
 --- `sort.prefix` is a string used to automatically infer operator mappings keys
 --- during |MiniOperators.setup()|. See |MiniOperators-mappings|.
+---
+--- `sort.selection` is a string used to choose a separate mapping for
+--- Visual mode, or to disable Visual mode mapping for operator.
+--- If `nil` (default), Visual mode mapping is set as `sort.prefix`.
 ---
 --- `sort.func` is a function used to actually sort text region.
 --- If `nil` (default), |MiniOperators.default_sort_func()| is used.
@@ -271,9 +297,14 @@ MiniOperators.config = {
   -- `prefix` defines keys mapped during `setup()`: in Normal mode
   -- to operate on textobject and line, in Visual - on selection.
 
+  -- `selection` can be set to define a different mapping in Visual mode.
+  -- If `nil` (default), Visual mode mapping will be same as `prefix`.
+  -- Set as an empty string to disable Visual mode mapping.
+
   -- Evaluate text and replace with output
   evaluate = {
     prefix = 'g=',
+    selection = nil,
 
     -- Function which does the evaluation
     func = nil,
@@ -282,6 +313,7 @@ MiniOperators.config = {
   -- Exchange text regions
   exchange = {
     prefix = 'gx',
+    selection = nil,
 
     -- Whether to reindent new text to match previous indent
     reindent_linewise = true,
@@ -290,6 +322,7 @@ MiniOperators.config = {
   -- Multiply (duplicate) text
   multiply = {
     prefix = 'gm',
+    selection = nil,
 
     -- Function which can modify text before multiplying
     func = nil,
@@ -298,6 +331,7 @@ MiniOperators.config = {
   -- Replace text with register
   replace = {
     prefix = 'gr',
+    selection = nil,
 
     -- Whether to reindent new text to match previous indent
     reindent_linewise = true,
@@ -306,6 +340,7 @@ MiniOperators.config = {
   -- Sort text
   sort = {
     prefix = 'gs',
+    selection = nil,
 
     -- Function which does the sort
     func = nil,
@@ -673,22 +708,27 @@ H.setup_config = function(config)
 
   H.check_type('evaluate', config.evaluate, 'table')
   H.check_type('evaluate.prefix', config.evaluate.prefix, 'string')
+  H.check_type('evaluate.selection', config.evaluate.selection, 'string', true)
   H.check_type('evaluate.func', config.evaluate.func, 'function', true)
 
   H.check_type('exchange', config.exchange, 'table')
   H.check_type('exchange.prefix', config.exchange.prefix, 'string')
+  H.check_type('exchange.selection', config.exchange.selection, 'string', true)
   H.check_type('exchange.reindent_linewise', config.exchange.reindent_linewise, 'boolean')
 
   H.check_type('multiply', config.multiply, 'table')
   H.check_type('multiply.prefix', config.multiply.prefix, 'string')
+  H.check_type('multiply.selection', config.multiply.selection, 'string', true)
   H.check_type('multiply.func', config.multiply.func, 'function', true)
 
   H.check_type('replace', config.replace, 'table')
   H.check_type('replace.prefix', config.replace.prefix, 'string')
+  H.check_type('replace.selection', config.replace.selection, 'string', true)
   H.check_type('replace.reindent_linewise', config.replace.reindent_linewise, 'boolean')
 
   H.check_type('sort', config.sort, 'table')
   H.check_type('sort.prefix', config.sort.prefix, 'string')
+  H.check_type('sort.selection', config.sort.selection, 'string', true)
   H.check_type('sort.func', config.sort.func, 'function', true)
 
   return config
@@ -709,6 +749,11 @@ H.apply_config = function(config)
     local prefix = config[operator_name].prefix
     if type(prefix) ~= 'string' or prefix == '' then return end
 
+    local selection = config[operator_name].selection
+    if selection == nil then
+      selection = prefix
+    end
+
     -- Remove conflicting built-in mappings
     if prefix == 'gr' and vim.fn.has('nvim-0.11') == 1 then
       remove_lsp_mapping('n', 'gra')
@@ -721,7 +766,7 @@ H.apply_config = function(config)
     local lhs_tbl = {
       textobject = prefix,
       line = prefix .. vim.fn.strcharpart(prefix, vim.fn.strchars(prefix) - 1, 1),
-      selection = prefix,
+      selection = selection
     }
     MiniOperators.make_mappings(operator_name, lhs_tbl)
   end

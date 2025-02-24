@@ -148,9 +148,14 @@ Here are code snippets for some common installation methods (use only one):
   -- `prefix` defines keys mapped during `setup()`: in Normal mode
   -- to operate on textobject and line, in Visual - on selection.
 
+  -- `selection` can be set to define a different mapping in Visual mode.
+  -- If `nil` (default), Visual mode mapping will be same as `prefix`.
+  -- Set as an empty string to disable Visual mode mapping.
+
   -- Evaluate text and replace with output
   evaluate = {
     prefix = 'g=',
+    selection = nil,
 
     -- Function which does the evaluation
     func = nil,
@@ -159,6 +164,7 @@ Here are code snippets for some common installation methods (use only one):
   -- Exchange text regions
   exchange = {
     prefix = 'gx',
+    selection = nil,
 
     -- Whether to reindent new text to match previous indent
     reindent_linewise = true,
@@ -167,6 +173,7 @@ Here are code snippets for some common installation methods (use only one):
   -- Multiply (duplicate) text
   multiply = {
     prefix = 'gm',
+    selection = nil,
 
     -- Function which can modify text before multiplying
     func = nil,
@@ -175,6 +182,7 @@ Here are code snippets for some common installation methods (use only one):
   -- Replace text with register
   replace = {
     prefix = 'gr',
+    selection = nil,
 
     -- Whether to reindent new text to match previous indent
     reindent_linewise = true,
@@ -183,6 +191,7 @@ Here are code snippets for some common installation methods (use only one):
   -- Sort text
   sort = {
     prefix = 'gs',
+    selection = nil,
 
     -- Function which does the sort
     func = nil,
