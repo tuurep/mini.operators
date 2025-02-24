@@ -718,10 +718,14 @@ H.apply_config = function(config)
       remove_lsp_mapping('n', 'grn')
     end
 
+    -- Don't create a visual mode mapping for replace,
+    -- because it's synonym for builtin visual mode P
+    local selection = operator_name ~= 'replace' and prefix or ''
+
     local lhs_tbl = {
       textobject = prefix,
       line = prefix .. vim.fn.strcharpart(prefix, vim.fn.strchars(prefix) - 1, 1),
-      selection = prefix,
+      selection = selection,
     }
     MiniOperators.make_mappings(operator_name, lhs_tbl)
   end
