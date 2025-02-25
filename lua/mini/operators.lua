@@ -586,10 +586,21 @@ MiniOperators.make_mappings = function(operator_name, lhs_tbl)
   local expr_opts = { expr = true, replace_keycodes = false, desc = operator_desc .. ' operator' }
   H.map('n', lhs_tbl.textobject, string.format('v:lua.MiniOperators.%s()', operator_name), expr_opts)
 
-  local rhs = lhs_tbl.textobject .. '_'
   -- - Make `sort()` line mapping to be charwise
-  if operator_name == 'sort' then rhs = '^' .. lhs_tbl.textobject .. 'g_' end
-  H.map('n', lhs_tbl.line, rhs, { remap = true, desc = operator_desc .. ' line' })
+  if operator_name == 'sort' then
+    H.map('n', lhs_tbl.line, function()
+      local count = vim.v.count > 0 and vim.v.count or ""
+      vim.api.nvim_feedkeys("^", "n", false)
+      vim.api.nvim_feedkeys(count .. lhs_tbl.textobject, "m", false)
+      vim.api.nvim_feedkeys("g_", "n", false)
+    end, { remap = true, desc = operator_desc .. ' line' })
+  else
+    H.map('n', lhs_tbl.line, function()
+      local count = vim.v.count > 0 and vim.v.count or ""
+      vim.api.nvim_feedkeys(count .. lhs_tbl.textobject, "m", false)
+      vim.api.nvim_feedkeys("_", "n", false)
+    end, { remap = true, desc = operator_desc .. ' line' })
+  end
 
   local visual_rhs = string.format([[<Cmd>lua MiniOperators.%s('visual')<CR>]], operator_name)
   H.map('x', lhs_tbl.selection, visual_rhs, { desc = operator_desc .. ' selection' })
