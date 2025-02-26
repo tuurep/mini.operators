@@ -121,6 +121,9 @@
 ---   different mapping for Visual mode, or an empty string to disable Visual
 ---   mode mapping.
 ---
+--- Exchange has an additional `cancel` mapping (default `<C-c>`) to cancel the
+--- exchange in process after the first step.
+---
 --- Example of default mappings for "replace":
 --- - `gr` in Normal mode for operating on textobject.
 ---   Example of usage: `griw` replaces "inner word" with default register.
@@ -135,7 +138,7 @@
 ---   change the "exchange" operator's mappings to 'tommcdo/vim-exchange' style: >lua
 ---
 ---     require('mini.operators').setup(
----       { exchange = { prefix = 'cx', selection = 'X' } }
+---       { exchange = { prefix = 'cx', selection = 'X', cancel = 'cxc' } }
 ---     )
 --- <
 ---   This will make mappings for `cx` / `cxx` / `X` instead of `gx` / `gxx` / `gx`.
@@ -145,7 +148,7 @@
 ---
 ---     -- Disable automated creation of "replace"
 ---     local operators = require('mini.operators')
----     operators.setup({ exchange = { prefix = '' } })
+---     operators.setup({ exchange = { prefix = '', cancel = 'cxc' } })
 ---
 ---     -- Make custom mappings
 ---     operators.make_mappings(
@@ -228,6 +231,9 @@ end
 --- `exchange.selection` is a string used to choose a separate mapping for
 --- Visual mode, or to disable Visual mode mapping for operator.
 --- If `nil` (default), Visual mode mapping is set as `exchange.prefix`.
+---
+--- `exchange.cancel` is a string for the mapping to cancel the exchange in
+--- process after the first step. Defaults to `<C-c>`.
 ---
 --- Note: default value "gx" overrides |netrw-gx| and |gx| / |v_gx|. If you prefer
 --- using its original functionality, choose different `config.prefix`.
@@ -315,6 +321,10 @@ MiniOperators.config = {
     prefix = 'gx',
     selection = nil,
 
+    -- Mapping to cancel after the first exchange operation
+    -- (will only be set when exchange is in process)
+    cancel = '<C-c>',
+
     -- Whether to reindent new text to match previous indent
     reindent_linewise = true,
   },
@@ -380,7 +390,7 @@ end
 ---   "yank both regions" and replace each one with another.
 ---
 --- Notes:
---- - Use `<C-c>` to stop exchanging after the first step.
+--- - Use exchange.cancel to stop exchanging after the first step.
 ---
 --- - Exchanged regions can have different (char,line,block)-wise submodes.
 ---
@@ -402,7 +412,7 @@ MiniOperators.exchange = function(mode)
     -- Store data about first region
     H.cache.exchange.step_one = H.exchange_set_region_extmark(mode, true)
 
-    -- Temporarily remap `<C-c>` to stop the exchange
+    -- Temporarily remap exchange.cancel to stop the exchange
     H.exchange_set_stop_mapping()
   else
     -- Store data about second region
@@ -725,6 +735,7 @@ H.setup_config = function(config)
   H.check_type('exchange', config.exchange, 'table')
   H.check_type('exchange.prefix', config.exchange.prefix, 'string')
   H.check_type('exchange.selection', config.exchange.selection, 'string', true)
+  H.check_type('exchange.cancel', config.exchange.cancel, 'string')
   H.check_type('exchange.reindent_linewise', config.exchange.reindent_linewise, 'boolean')
 
   H.check_type('multiply', config.multiply, 'table')
@@ -980,7 +991,7 @@ H.exchange_stop = function()
 end
 
 H.exchange_set_stop_mapping = function()
-  local lhs = '<C-c>'
+  local lhs = MiniOperators.config['exchange'].cancel
   H.cache.exchange.stop_restore_map_data = vim.fn.maparg(lhs, 'n', false, true)
   vim.keymap.set('n', lhs, H.exchange_stop, { desc = 'Stop exchange' })
 end
@@ -993,7 +1004,7 @@ H.exchange_del_stop_mapping = function()
   if vim.tbl_count(map_data) > 0 then
     vim.fn.mapset('n', false, map_data)
   else
-    vim.keymap.del('n', map_data.lhs or '<C-c>')
+    vim.keymap.del('n', map_data.lhs or MiniOperators.config['exchange'].cancel)
   end
 end
 
