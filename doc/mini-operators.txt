@@ -123,6 +123,9 @@ For each operator the following mappings are created:
   different mapping for Visual mode, or an empty string to disable Visual
   mode mapping.
 
+Exchange has an additional `cancel` mapping (default `<C-c>`) to cancel the
+exchange in process after the first step.
+
 Example of default mappings for "replace":
 - `gr` in Normal mode for operating on textobject.
   Example of usage: `griw` replaces "inner word" with default register.
@@ -137,7 +140,7 @@ There are two suggested ways to customize mappings:
   change the "exchange" operator's mappings to 'tommcdo/vim-exchange' style: >lua
 
     require('mini.operators').setup(
-      { exchange = { prefix = 'cx', selection = 'X' } }
+      { exchange = { prefix = 'cx', selection = 'X', cancel = 'cxc' } }
     )
 <
   This will make mappings for `cx` / `cxx` / `X` instead of `gx` / `gxx` / `gx`.
@@ -147,7 +150,7 @@ There are two suggested ways to customize mappings:
 
     -- Disable automated creation of "replace"
     local operators = require('mini.operators')
-    operators.setup({ exchange = { prefix = '' } })
+    operators.setup({ exchange = { prefix = '', cancel = 'cxc' } })
 
     -- Make custom mappings
     operators.make_mappings(
@@ -198,6 +201,10 @@ Default values:
     exchange = {
       prefix = 'gx',
       selection = nil,
+
+      -- Mapping to cancel after the first exchange operation
+      -- (will only be set when exchange is in process)
+      cancel = '<C-c>',
 
       -- Whether to reindent new text to match previous indent
       reindent_linewise = true,
@@ -259,6 +266,9 @@ during |MiniOperators.setup()|. See |MiniOperators-mappings|.
 `exchange.selection` is a string used to choose a separate mapping for
 Visual mode, or to disable Visual mode mapping for operator.
 If `nil` (default), Visual mode mapping is set as `exchange.prefix`.
+
+`exchange.cancel` is a string for the mapping to cancel the exchange in
+process after the first step. Defaults to `<C-c>`.
 
 Note: default value "gx" overrides |netrw-gx| and |gx| / |v_gx|. If you prefer
 using its original functionality, choose different `config.prefix`.
@@ -348,7 +358,7 @@ Has two-step logic:
   "yank both regions" and replace each one with another.
 
 Notes:
-- Use `<C-c>` to stop exchanging after the first step.
+- Use exchange.cancel to stop exchanging after the first step.
 
 - Exchanged regions can have different (char,line,block)-wise submodes.
 

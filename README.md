@@ -166,6 +166,10 @@ Here are code snippets for some common installation methods (use only one):
     prefix = 'gx',
     selection = nil,
 
+    -- Mapping to cancel after the first exchange operation
+    -- (will only be set when exchange is in process)
+    cancel = '<C-c>',
+
     -- Whether to reindent new text to match previous indent
     reindent_linewise = true,
   },
