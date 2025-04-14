@@ -158,7 +158,7 @@
 --- <
 ---@tag MiniOperators-overview
 
----@alias __operators_mode string|nil One of `nil`, `'char'`, `'line'`, `''block`, `'visual'`.
+---@alias __operators_mode string|nil One of `nil`, `'char'`, `'line'`, `'block'`, `'visual'`.
 ---@alias __operators_content table Table with the following fields:
 ---   - <lines> `(table)` - array with content lines.
 ---   - <submode> `(string)` - region submode. One of `'v'`, `'V'`, `'<C-v>'` (escaped).
@@ -182,6 +182,15 @@ local H = {}
 ---   require('mini.operators').setup({}) -- replace {} with your config table
 --- <
 MiniOperators.setup = function(config)
+  -- TODO: Remove after Neovim=0.8 support is dropped
+  if vim.fn.has('nvim-0.9') == 0 then
+    vim.notify(
+      '(mini.operators) Neovim<0.9 is soft deprecated (module works but not supported).'
+        .. ' It will be deprecated after next "mini.nvim" release (module might not work).'
+        .. ' Please update your Neovim version.'
+    )
+  end
+
   -- Export module
   _G.MiniOperators = MiniOperators
 
@@ -944,7 +953,7 @@ H.exchange_set_region_extmark = function(mode, add_highlight)
   if add_highlight and extmark_hl_group == nil then
     -- Highlighting blockwise region needs full register type with width
     local opts = { regtype = H.exchange_get_blockwise_regtype(markcoords_from, markcoords_to) }
-    vim.highlight.range(buf_id, ns_id, 'MiniOperatorsExchangeFrom', extmark_from, extmark_to, opts)
+    H.highlight_range(buf_id, ns_id, 'MiniOperatorsExchangeFrom', extmark_from, extmark_to, opts)
   end
 
   -- Return data to cache
@@ -1361,5 +1370,9 @@ end
 
 -- TODO: Remove after compatibility with Neovim=0.9 is dropped
 H.islist = vim.fn.has('nvim-0.10') == 1 and vim.islist or vim.tbl_islist
+
+-- TODO: Remove after compatibility with Neovim=0.10 is dropped
+H.highlight_range = function(...) vim.hl.range(...) end
+if vim.fn.has('nvim-0.11') == 0 then H.highlight_range = function(...) vim.highlight.range(...) end end
 
 return MiniOperators
