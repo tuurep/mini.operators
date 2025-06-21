@@ -183,15 +183,6 @@ local H = {}
 ---   require('mini.operators').setup({}) -- replace {} with your config table
 --- <
 MiniOperators.setup = function(config)
-  -- TODO: Remove after Neovim=0.8 support is dropped
-  if vim.fn.has('nvim-0.9') == 0 then
-    vim.notify(
-      '(mini.operators) Neovim<0.9 is soft deprecated (module works but not supported).'
-        .. ' It will be deprecated after next "mini.nvim" release (module might not work).'
-        .. ' Please update your Neovim version.'
-    )
-  end
-
   -- Export module
   _G.MiniOperators = MiniOperators
 
@@ -245,8 +236,10 @@ end
 --- `exchange.cancel` is a string for the mapping to cancel the exchange in
 --- process after the first step. Defaults to `<C-c>`.
 ---
---- Note: default value "gx" overrides |netrw-gx| and |gx| / |v_gx|. If you prefer
---- using its original functionality, choose different `config.prefix`.
+--- Note: default value "gx" overrides |netrw-gx| and |gx| / |v_gx|.
+--- Instead |gx| and |v_gx| are remapped to `gX` (if that is not already taken).
+--- To keep using `gx` with built-in feature (open URL at cursor) choose
+--- different `config.prefix`.
 ---
 --- `exchange.reindent_linewise` is a boolean indicating whether newly put linewise
 --- text should preserve indent of replaced text. In other words, if `false`,
@@ -1363,7 +1356,7 @@ H.with_temp_context = function(context, f)
 end
 
 -- A hack to restore previous dot-repeat action
-H.cancel_redo = function() end;
+H.cancel_redo = function() end
 (function()
   local has_ffi, ffi = pcall(require, 'ffi')
   if not has_ffi then return end
