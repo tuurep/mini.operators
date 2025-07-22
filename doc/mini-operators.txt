@@ -200,6 +200,7 @@ Default values:
 
     -- Exchange text regions
     exchange = {
+      -- NOTE: Default `gx` is remapped to `gX`
       prefix = 'gx',
       selection = nil,
 
@@ -222,6 +223,7 @@ Default values:
 
     -- Replace text with register
     replace = {
+      -- NOTE: Default `gr*` LSP mappings are removed
       prefix = 'gr',
       selection = nil,
 
